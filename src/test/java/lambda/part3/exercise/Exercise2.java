@@ -39,7 +39,13 @@ public class Exercise2 {
          * @param mapping Функция преобразования элементов.
          */
         public <R> MapHelper<R> map(Function<T, R> mapping) {
-            throw new UnsupportedOperationException();
+            List<R> result = new ArrayList<>();
+
+            for(T t : source) {
+                result.add(mapping.apply(t));
+            }
+
+            return new MapHelper<>(result);
         }
 
         /**
@@ -49,7 +55,13 @@ public class Exercise2 {
          * @param flatMapping Функция преобразования элементов.
          */
         public <R> MapHelper<R> flatMap(Function<T, List<R>> flatMapping) {
-            throw new UnsupportedOperationException();
+            List<R> result = new ArrayList<>();
+
+            for(T t : source) {
+                result.addAll(flatMapping.apply(t));
+            }
+
+            return new MapHelper<>(result);
         }
     }
 
@@ -63,6 +75,12 @@ public class Exercise2 {
         // TODO                          .map(Person -> String(full name))
         // TODO                          .map(String -> Integer(length of string))
         // TODO                          .getMapped();
+
+        lengths = MapHelper.from(employees)
+                .map(Employee::getPerson)
+                .map(Person::getFullName)
+                .map(String::length)
+                .getMapped();
         assertEquals(Arrays.asList(14, 19, 14, 15, 14, 16), lengths);
     }
 
@@ -77,6 +95,20 @@ public class Exercise2 {
         // TODO                        .flatMap(String -> Character(letter))
         // TODO                        .map(Character -> Integer(code letter)
         // TODO                        .getMapped();
+
+        codes = MapHelper.from(employees)
+                .flatMap(Employee::getJobHistory)
+                .map(JobHistoryEntry::getPosition)
+                .flatMap(string -> {
+                    List<Character> list = new ArrayList<>();
+                    for (char c : string.toCharArray()) {
+                        list.add(c);
+                    }
+                    return list;
+                })
+                .map(character -> (int) character)
+                .getMapped();
+
         assertEquals(calcCodes("dev", "dev", "tester", "dev", "dev", "QA", "QA", "dev", "tester", "tester", "QA", "QA", "QA", "dev"), codes);
     }
 
