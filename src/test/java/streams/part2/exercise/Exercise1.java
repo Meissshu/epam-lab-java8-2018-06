@@ -6,6 +6,9 @@ import lambda.data.Person;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -16,8 +19,9 @@ public class Exercise1 {
     public void calcTotalYearsSpentInEpam() {
         List<Employee> employees = getEmployees();
 
+
         // TODO реализация
-        Long hours = null;
+        Long hours = employees.stream().map(Employee::getJobHistory).flatMap(Collection::stream).filter(entry -> "EPAM".equals(entry.getEmployer())).mapToLong(JobHistoryEntry::getDuration).sum();
 
         assertEquals(19, hours.longValue());
     }
@@ -26,8 +30,15 @@ public class Exercise1 {
     public void findPersonsWithQaExperience() {
         List<Employee> employees = getEmployees();
 
-        // TODO реализация
-        Set<Person> workedAsQa = null;
+
+        Set<Person> workedAsQa = employees.stream()
+                .filter(
+                        employee -> employee.getJobHistory()
+                                .stream()
+                                .anyMatch(jobHistoryEntry -> "QA".equals(jobHistoryEntry.getPosition()))
+                )
+                .map(Employee::getPerson)
+                .collect(Collectors.toSet());
 
         assertEquals(new HashSet<>(Arrays.asList(
                 employees.get(2).getPerson(),
@@ -40,8 +51,11 @@ public class Exercise1 {
     public void composeFullNamesOfEmployeesUsingLineSeparatorAsDelimiter() {
         List<Employee> employees = getEmployees();
 
-        // TODO реализация
-        String result = null;
+
+        String result = employees.stream()
+                .map(Employee::getPerson)
+                .map(Person::getFullName)
+                .collect(Collectors.joining("\n"));
 
         assertEquals("Иван Мельников\n"
                 + "Александр Дементьев\n"
@@ -51,13 +65,30 @@ public class Exercise1 {
                 + "Иван Александров", result);
     }
 
+    private Function<Employee, String> getFirstPosition =
+            employee -> employee.getJobHistory()
+                    .stream()
+                    .map(JobHistoryEntry::getPosition)
+                    .findFirst()
+                    .orElse(null);
+
+    private Function<Employee, Set<Person>> employeeToSet =
+            employee -> new HashSet<>(Collections.singletonList(employee.getPerson()));
+
+    private BinaryOperator<Set<Person>> mergeSets =
+            (first, second) -> {
+                first.addAll(second);
+                return first;
+            };
+
     @Test
     @SuppressWarnings("Duplicates")
     public void groupPersonsByFirstPositionUsingToMap() {
         List<Employee> employees = getEmployees();
 
         // TODO реализация
-        Map<String, Set<Person>> result = null;
+        Map<String, Set<Person>> result = employees.stream().collect(Collectors.toMap(getFirstPosition, employeeToSet, mergeSets));
+
 
         Map<String, Set<Person>> expected = new HashMap<>();
         expected.put("QA", new HashSet<>(Arrays.asList(employees.get(2).getPerson(), employees.get(5).getPerson())));
@@ -76,7 +107,12 @@ public class Exercise1 {
         List<Employee> employees = getEmployees();
 
         // TODO реализация
-        Map<String, Set<Person>> result = null;
+        Map<String, Set<Person>> result = employees.stream()
+                .collect(
+                        Collectors.groupingBy(
+                                getFirstPosition, Collectors.mapping(Employee::getPerson, Collectors.toSet())
+                        )
+                );
 
         Map<String, Set<Person>> expected = new HashMap<>();
         expected.put("QA", new HashSet<>(Arrays.asList(employees.get(2).getPerson(), employees.get(5).getPerson())));
