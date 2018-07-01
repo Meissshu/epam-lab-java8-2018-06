@@ -4,8 +4,10 @@ import lambda.data.Employee;
 import lambda.data.JobHistoryEntry;
 import lambda.data.Person;
 import org.junit.Test;
+import streams.part2.exercise.pair.PersonEmployerPair;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -68,7 +70,13 @@ public class Exercise2 {
     public void employersStuffList() {
         List<Employee> employees = getEmployees();
 
-        Map<String, Set<Person>> result = null;
+        Map<String, Set<Person>> result = employees.stream()
+                .flatMap(employee -> employee.getJobHistory().stream()
+                                .map(jobHistoryEntry -> new PersonEmployerPair(employee.getPerson(), jobHistoryEntry.getEmployer())))
+                .collect(Collectors.groupingBy(
+                        PersonEmployerPair::getEmployer,
+                        Collectors.mapping(PersonEmployerPair::getPerson, Collectors.toSet()))
+                );
 
         Map<String, Set<Person>> expected = new HashMap<>();
         expected.put("yandex", new HashSet<>(Collections.singletonList(employees.get(2).getPerson())));
@@ -142,7 +150,12 @@ public class Exercise2 {
     public void indexByFirstEmployer() {
         List<Employee> employees = getEmployees();
 
-        Map<String, Set<Person>> result = null;
+        Map<String, Set<Person>> result = employees.stream()
+                .map(employee -> new PersonEmployerPair(employee.getPerson(), employee.getJobHistory().get(0).getEmployer()))
+                .collect(Collectors.groupingBy(
+                        PersonEmployerPair::getEmployer,
+                        Collectors.mapping(PersonEmployerPair::getPerson, Collectors.toSet()))
+                );
 
         Map<String, Set<Person>> expected = new HashMap<>();
         expected.put("yandex", new HashSet<>(Collections.singletonList(employees.get(2).getPerson())));
