@@ -179,7 +179,20 @@ public class Exercise2 {
     public void greatestExperiencePerEmployer() {
         List<Employee> employees = getEmployees();
 
-        Map<String, Person> collect = null;
+        Map<String, Person> collect =
+        employees.stream()
+                 .flatMap(employee ->
+                         employee.getJobHistory()
+                                 .stream()
+                                 .map(jobHistoryEntry ->
+                                         new PersonEmployerPair(employee.getPerson(), jobHistoryEntry.getEmployer(), jobHistoryEntry.getDuration())))
+                 .collect(Collectors.groupingBy(
+                         PersonEmployerPair::getEmployer,
+                         Collectors.collectingAndThen(
+                                 Collectors.maxBy(Comparator.comparingInt(PersonEmployerPair::getDuration)),
+                                 pair -> pair.get().getPerson()))
+                 );
+
 
         Map<String, Person> expected = new HashMap<>();
         expected.put("EPAM", employees.get(4).getPerson());
@@ -203,7 +216,7 @@ public class Exercise2 {
                         Arrays.asList(
                                 new JobHistoryEntry(1, "tester", "EPAM"),
                                 new JobHistoryEntry(2, "dev", "EPAM"),
-                                new JobHistoryEntry(1, "dev", "google")
+                                new JobHistoryEntry(2, "dev", "google")
                         )),
                 new Employee(
                         new Person("Дмитрий", "Осинов", 40),
